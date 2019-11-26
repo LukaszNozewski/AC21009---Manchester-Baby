@@ -1,66 +1,182 @@
 #include <iostream>
-#include <vector>
 #include <string>
+#include <stdio.h>
 #include <fstream>
 #include <sstream>
+#include "assembler.h"
+#include <vector>
+
 using namespace std;
 
-vector<vector<string>> AssemblyCode; 	// stores read in AssemblyCode without comments
-vector<vector<string>> labelTable;		// stores labels and address
-vector<string> MachineCode;
 
+int currentLineNumber=0;
+int totalLines = 0;
+string fileName = "default.txt";
+bool displayProgressBar=true;
 
-void decTo5Binary(string num){ // param to 5 bit binary
+/**
+ * symbolTable
+ * stores any symbol from the assembly code as 2 variables
+ */
+class symbolTable
+{
+	public:
+		string label;
+		int lineNumber;
 
+		symbolTable();
+		~symbolTable();
+};
+symbolTable::symbolTable()
+{
+	//cout << " Symbol Table Created" << endl;
+}
+symbolTable::~symbolTable()
+{
+	//cout << " Symbol Table Destroyed." << endl;
+}
+
+/**
+ * Assembler
+ * Creates the assembler and all necessary classes - stores the temporaryMemory before it is written.
+ */
+class Assembler
+{
+	public:
+
+		string tempStore[38][32];
+		string insertFileName();
+
+		Assembler();
+	  ~Assembler();
+
+		void getInstructions();
+		void writeProgram();
+		void importfile(string selection);
+		void interpretateLine(string sourceCodeLine);
+		void addSymbol(string symbolLabel, int symbolLineNumber);
+		void insertInstruction(string label);
+
+		string convertToBinary(int decimalNumber);
+		string convertOpcode(string opcode);
+
+};
+
+Assembler::Assembler()
+{
+	//cout << " Assembler Created" << endl;
+}
+
+Assembler::~Assembler()
+{
+	//cout << "\n Assembler Destroyed." << endl;
 }
 
 
-void decTo32Binary(string num){ // param to 32 bit binary
+/**
+ * main
+ * creates a new instance of assembler
+ * imports header from assembler.h
+ * calls import file to make the first pass at the source code
+ * calls import file again ignoring specific blocks of code to make a 2nd pass
+ * displays progress bar whilst running through code.
+ * writes to program
+ */
 
+int main()
+{
+	Assembler Assembler;
+
+	// Displaying the header at the top of the program
+	header();
+
+	// Making first pass at source code
+	Assembler.importfile("1st");
+
+	// Making second pass at source code
+	Assembler.importfile("2nd");
+
+	// Writing the program to a text file
+	Assembler.writeProgram();
+	return 0;
 }
 
+string Assembler::insertFileName(){
+  string fileName;
+  bool fileValid = false;
 
-void loadAssembly(){ // loads assembly code (no comments)
+  while(fileValid != true){
+    cout << "\n Filename: " << endl;
+    cin >> fileName;
 
+    string validExtension = ".txt";
+		int stringLength = fileName.size();
+    if(fileName.substr(stringLength-3) == validExtension){
+      fileValid = true;
+    }
+    else{
+      fileValid = false;
+    }
+
+    return fileName;
+  }
 }
 
+void Assembler::importfile(string selection){
+	int linesLoaded = 0;
+	string readLine;
+	string previousLine;
+	ifstream programFile;
+	bool fileExists = false;
+	int counter = 0;
 
-void printAssembly(){ // priints out all the assembly code
+	while(!fileExists){
+		ifstream ifile(fileName.c_str());
+		if(selection == "first"){
+			cout << "Enter the name of the file to convert (binary): " << endl;
+			fileName = insertFileName();
+			programFile.open(fileName.c_str());
+		}
+		else{
+			programFile.open(fileName.c_str());
+		}
 
-}
+		while(readLine != ""){
+			if(previousLine == readLine){
+				readLine = "";
+			}
+			getline(programFile,readLine);
+			previousLine = readLine;
 
-bool checkLabel(string label){ //check if param exists
+			if(selection == "first"){
+				cout << readLine << endl;
+			}
+			counter++;
+		}
+		programFile.close();
+		totalLines = counter - 1;
 
-}
+		if(ifile){
+			fileExists = true;
+			programFile.open(fileName.c_str());
 
-void firstPass(){ // first pass of assembly code
+			if(selection == "first"){
+				cout << "\n Opening " << fileName << endl;
+				cout << "---------------------------------------------" << endl;
+				cout << "\n Converting " << totalLines << " lines to binary.\n" << endl;
+			}
 
-}
+			for(int i = 0; i < totalLines; i++){
+				getline(programFile, readLine);
+				linesLoaded++;
 
-void secondPass(){ // second pass of assembly code
-}
-
-string convertOpCode(string op){ // turn param to 3 bit binary
-
-}
-
-void displayMachineCode(){ // displays the machine code
-
-}
-
-void displayLabel(){ // display the label
-
-}
-
-void checkMachineCode(){ // checks if the machine code is valid
-
-}
-
-void saveMachineCode(){ // saves the machine code
-
-}
+				if(selection == "first"){
+					cout << " Converting line: " << readLine << endl;
+					interpretateLine(readLine);
+				}
+			}
 
 
-void assembler(){ //turns assembly code to machine code
-
+		}
+	}
 }
